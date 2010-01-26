@@ -46,7 +46,7 @@ Typical usage for such a model::
         data.bar = "bar"
         data.save()
 
-and deletion:
+and deletion::
 
     key = "something_unique"
     data = MyData.get(key)
