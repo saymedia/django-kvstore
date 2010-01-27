@@ -13,6 +13,7 @@ Where ``scheme`` is one of the following, persistent stores:
 * googleappengine (Google AppEngine data store)
 * sdb (Amazon SimpleDB)
 * tokyotyrant (Tokyo Tyrant)
+* redis (Redis)
 
 And some non-persistent stores, provided mainly for testing purposes:
 
