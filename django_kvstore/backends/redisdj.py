@@ -5,6 +5,8 @@ Example configuration for Django settings:
 
     KEY_VALUE_STORE_BACKEND = 'redis://hostname:port'
 
+port is optional. If none is given, the port specified in redis.conf will be used.
+
 """
 import base64
 from base import BaseStorage, InvalidKeyValueStoreBackendError
@@ -23,8 +25,14 @@ except ImportError:
 class StorageClass(BaseStorage):
 
     def __init__(self, server, params):
+        if ':' in server:
+            host, port = server.split(':')
+            port = int(port)
+        else:
+            host, port = server, None
+        params['port'] = port
         BaseStorage.__init__(self, params)
-        self._db = redis.Redis(host=server, **params)
+        self._db = redis.Redis(host=host, **params)
 
     def set(self, key, value):
         encoded = base64.encodestring(pickle.dumps(value, 2)).strip()
