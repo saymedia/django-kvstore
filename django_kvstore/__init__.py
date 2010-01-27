@@ -26,6 +26,7 @@ BACKENDS = {
     'db': 'db',
     'simpledb': 'sdb',
     'googleappengine': 'googleappengine',
+    'redis': 'redisdj',
 }
 
 class InvalidKeyValueStoreBackend(Exception): pass
