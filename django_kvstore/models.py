@@ -90,6 +90,9 @@ class Model(object):
         d = self.to_dict()
         kvstore.set(generate_key(self.__class__, self._get_pk_value()), d)
 
+    def delete(self):
+        kvstore.delete(generate_key(self.__class__, self._get_pk_value()))
+
     def _get_pk_value(self):
         return getattr(self, self.key_field)
 
@@ -113,3 +116,4 @@ class Model(object):
         if fields is None:
             return None
         return cls.from_dict(fields)
+
