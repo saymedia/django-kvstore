@@ -63,6 +63,6 @@ setup(
     provides=['django_kvstore'],
     include_package_data=True,
     zip_safe=True,
-    requires=['Django(>=1.1.1)'],
-    install_requires=['Django>=1.1.1'],
+    requires=['Django(>=1.6)'],
+    install_requires=['Django>=1.6'],
 )
