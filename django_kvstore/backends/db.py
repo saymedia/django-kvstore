@@ -15,17 +15,22 @@ table name Django uses is the same table name provided in the
 """
 
 import base64
+import logging
 from django_kvstore.backends.base import BaseStorage
 from django.db import connection, transaction, DatabaseError
+from django.db.utils import IntegrityError
+
 try:
     import cPickle as pickle
 except ImportError:
     import pickle
 
+
 class StorageClass(BaseStorage):
     def __init__(self, table, params):
         BaseStorage.__init__(self, params)
         self._table = table
+        self.logger = logging.getLogger(__name__)
 
     def get(self, key):
         cursor = connection.cursor()
@@ -37,24 +42,25 @@ class StorageClass(BaseStorage):
 
     def set(self, key, value):
         encoded = base64.encodestring(pickle.dumps(value, 2)).strip()
-        cursor = connection.cursor()
-        cursor.execute("SELECT kee FROM %s WHERE kee = %%s" % self._table, [key])
+        # report database errors after the atomic transaction has rolled back
         try:
-            if cursor.fetchone():
-                cursor.execute("UPDATE %s SET value = %%s WHERE kee = %%s" % self._table, [encoded, key])
-            else:
-                cursor.execute("INSERT INTO %s (kee, value) VALUES (%%s, %%s)" % self._table, [key, encoded])
-        except DatabaseError, e:
-            # To be threadsafe, updates/inserts are allowed to fail silently
+            with transaction.atomic():
+                cursor = connection.cursor()
+                cursor.execute("SELECT kee FROM %s WHERE kee = %%s" % self._table, [key])
+                if cursor.fetchone():
+                    cursor.execute("UPDATE %s SET value = %%s WHERE kee = %%s" % self._table, [encoded, key])
+                else:
+                    cursor.execute("INSERT INTO %s (kee, value) VALUES (%%s, %%s)" % self._table, [key, encoded])
+        except (DatabaseError, IntegrityError):
+            # Report the atomic failure
+            self.logger.info("set operation for %s failed and has been rolled back", key)
             return False
-        else:
-            transaction.commit_unless_managed()
-            return True
+        return True
 
+    @transaction.atomic()
     def delete(self, key):
         cursor = connection.cursor()
         cursor.execute("DELETE FROM %s WHERE kee = %%s" % self._table, [key])
-        transaction.commit_unless_managed()
 
     def has_key(self, key):
         cursor = connection.cursor()
